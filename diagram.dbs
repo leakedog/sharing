@@ -30,7 +30,6 @@
 			<column name="aircraft_id" type="integer" jt="4" mandatory="y" />
 			<column name="model_id" type="integer" jt="4" mandatory="y" />
 			<column name="status" type="aircraft_status" jt="12" mandatory="y" />
-			<column name="number_of_flights" type="integer" jt="4" mandatory="y" />
 			<column name="date_of_manufacture" type="date" jt="91" mandatory="y" />
 			<index name="pk aircrafts" unique="PRIMARY_KEY" >
 				<column name="aircraft_id" />
@@ -51,6 +50,7 @@
 			<column name="max_flight_range" type="integer" jt="4" mandatory="y" >
 				<comment><![CDATA['The maximum flight range for this particular model provided in kilometers.']]></comment>
 			</column>
+			<column name="luggage_capacity" type="numeric" length="3" jt="2" mandatory="y" />
 			<index name="pk aircraft model" unique="PRIMARY_KEY" >
 				<column name="model_id" />
 			</index>
@@ -59,7 +59,9 @@
 			<comment><![CDATA['Information about the aiprorts one billion airlines operates with.']]></comment>
 			<column name="airport_id" type="numeric" length="0" decimal="12" jt="2" mandatory="y" />
 			<column name="name" type="varchar" length="100" jt="12" mandatory="y" />
-			<column name="location" type="varchar" jt="12" mandatory="y" />
+			<column name="location" type="point" jt="1111" mandatory="y" >
+				<comment><![CDATA[Longitude and latitude coordinates of location, should be change to geography(point)]]></comment>
+			</column>
 			<index name="pk_airports" unique="PRIMARY_KEY" >
 				<column name="airport_id" />
 			</index>
@@ -77,11 +79,20 @@
 			<column name="rating" type="integer" jt="4" >
 				<comment><![CDATA['from 0 to 10, passenger satisfaction']]></comment>
 			</column>
+			<column name="cabin_baggage_id" type="integer" jt="4" >
+				<defo><![CDATA[0]]></defo>
+			</column>
+			<column name="checked_baggage_id" type="integer" jt="4" >
+				<defo><![CDATA[0]]></defo>
+			</column>
 			<index name="pk_booking_table" unique="PRIMARY_KEY" >
 				<column name="ticket_id" />
 			</index>
+			<index name="unq_booking_table_seat_number" unique="UNIQUE_KEY" >
+				<column name="seat_number" />
+			</index>
 			<constraint name="rating_check" >
-				<string><![CDATA[rating BETWEEN 0 AND 10]]></string>options="" 
+				<string><![CDATA[rating BETWEEN 0 AND 10]]></string>
 			</constraint>
 			<fk name="fk_booking_table_flight_table" to_schema="public" to_table="flight_table" options="" >
 				<fk_column name="flight_id" pk="flight_id" />
@@ -89,6 +100,55 @@
 			<fk name="fk_booking_table_passengers" to_schema="public" to_table="passengers" >
 				<fk_column name="passenger_id" pk="passenger_id" />
 			</fk>
+			<fk name="fk_booking_table_cabin_baggage" to_schema="public" to_table="cabin_baggage" >
+				<fk_column name="cabin_baggage_id" pk="cabin_baggage_id" />
+			</fk>
+			<fk name="fk_booking_table" to_schema="public" to_table="checked_baggage" >
+				<fk_column name="checked_baggage_id" pk="checked_baggage_id" />
+			</fk>
+		</table>
+		<table name="cabin_baggage" prior="hand_luggage" >
+			<column name="cabin_baggage_id" prior="hand_luggage_id" type="integer" jt="4" mandatory="y" />
+			<column name="max_width" type="integer" jt="4" mandatory="y" >
+				<comment><![CDATA[in cm]]></comment>
+			</column>
+			<column name="max_height" type="integer" jt="4" mandatory="y" >
+				<comment><![CDATA[in cm]]></comment>
+			</column>
+			<column name="max_length" type="integer" jt="4" mandatory="y" >
+				<comment><![CDATA[in cm]]></comment>
+			</column>
+			<column name="max_weight" type="numeric" length="3" jt="2" mandatory="y" >
+				<defo><![CDATA[0]]></defo>
+			</column>
+			<column name="fee" type="money" jt="3" mandatory="y" />
+			<index name="pk_hand_luggage" unique="PRIMARY_KEY" >
+				<column name="cabin_baggage_id" />
+			</index>
+		</table>
+		<table name="checked_baggage" prior="checked_bagge" >
+			<column name="checked_baggage_id" type="integer" jt="4" mandatory="y" />
+			<column name="max_width" type="integer" jt="4" mandatory="y" >
+				<comment><![CDATA[in cm]]></comment>
+			</column>
+			<column name="max_height" type="integer" jt="4" mandatory="y" >
+				<comment><![CDATA[in cm]]></comment>
+			</column>
+			<column name="max_length" type="integer" jt="4" mandatory="y" >
+				<comment><![CDATA[in cm]]></comment>
+			</column>
+			<column name="max_weight" type="numeric" length="3" jt="2" mandatory="y" />
+			<column name="fee" type="money" jt="3" mandatory="y" />
+			<index name="pk_checked_baggage" unique="PRIMARY_KEY" >
+				<column name="checked_baggage_id" />
+			</index>
+		</table>
+		<table name="citizenship" prior="tbl" >
+			<column name="citizenship_id" type="integer" length="100" jt="4" mandatory="y" />
+			<column name="citizenship" type="varchar" length="30" jt="12" mandatory="y" />
+			<index name="pk_citizenship" unique="PRIMARY_KEY" >
+				<column name="citizenship_id" />
+			</index>
 		</table>
 		<table name="crew" spec="" >
 			<column name="flight_id" type="numeric" length="0" decimal="20" jt="2" mandatory="y" />
@@ -100,20 +160,39 @@
 				<fk_column name="employee_id" pk="employee_id" />
 			</fk>
 		</table>
+		<table name="discount_table" prior="tbl_0" >
+			<column name="discount_id" type="integer" jt="4" mandatory="y" />
+			<column name="name" type="varchar" length="25" jt="12" mandatory="y" />
+			<column name="description" type="varchar" length="50" jt="12" />
+			<column name="discount_percent" type="numeric" length="2" decimal="0" jt="2" />
+			<column name="max_discount_amount" type="money" jt="3" mandatory="y" >
+				<defo><![CDATA[0]]></defo>
+				<comment><![CDATA[For instance if there is more than 1000 thousand dollar order, max_discount is 100 even if it's percentage is 0.25]]></comment>
+			</column>
+			<column name="active" type="boolean" jt="16" mandatory="y" />
+			<column name="created_at" type="date" jt="91" mandatory="y" >
+				<defo><![CDATA[CURRENT_DATE]]></defo>
+			</column>
+			<column name="expired_at" prior="deleted_at" type="date" jt="91" />
+			<index name="pk_discount_table" unique="PRIMARY_KEY" >
+				<column name="discount_id" />
+			</index>
+		</table>
 		<table name="employee" spec="" >
 			<comment><![CDATA['employee table provides basic information about employees of the company.']]></comment>
 			<column name="employee_id" type="integer" jt="4" mandatory="y" />
 			<column name="name" type="varchar" length="100" jt="12" mandatory="y" />
-			<column name="position" type="position_type" jt="12" mandatory="y" />
+			<column name="surname" type="varchar" length="30" jt="12" mandatory="y" />
+			<column name="position_id" prior="position" type="integer" jt="4" mandatory="y" />
 			<column name="status" type="employee_status" jt="12" mandatory="y" />
-			<column name="remuneration" type="integer" jt="4" mandatory="y" >
-				<comment><![CDATA['remuneration is given in USD.']]></comment>
-			</column>
 			<column name="email" type="varchar" length="100" jt="12" />
 			<column name="home_address" type="varchar" length="100" jt="12" />
 			<index name="pk employee" unique="PRIMARY_KEY" >
 				<column name="employee_id" />
 			</index>
+			<fk name="fk_employee_employee_position" to_schema="public" to_table="employee_position" >
+				<fk_column name="position_id" pk="position_id" />
+			</fk>
 		</table>
 		<table name="employee_history" spec="" >
 			<comment><![CDATA['employee_history table stores information about actions connected with employees such as hiring, position change, remuneration change and employee separation. Every such action noted in database has to be accompanied with its description in a comment column.']]></comment>
@@ -130,6 +209,24 @@
 				<fk_column name="employee_id" pk="employee_id" />
 			</fk>
 		</table>
+		<table name="employee_position" prior="tbl" >
+			<column name="position_id" type="integer" jt="4" mandatory="y" />
+			<column name="position_name" type="varchar" length="41" jt="12" mandatory="y" />
+			<index name="pk_employee_position" unique="PRIMARY_KEY" >
+				<column name="position_id" />
+			</index>
+		</table>
+		<table name="employee_salaries" prior="employee_salary" >
+			<column name="employee_id" type="integer" jt="4" mandatory="y" />
+			<column name="salary" type="money" jt="3" mandatory="y" />
+			<column name="from_date" type="date" jt="91" mandatory="y" />
+			<column name="to_date" type="date" jt="91" mandatory="y" >
+				<defo><![CDATA[CURRENT_DATE]]></defo>
+			</column>
+			<fk name="fk_employee_salaries_employee" to_schema="public" to_table="employee" >
+				<fk_column name="employee_id" pk="employee_id" />
+			</fk>
+		</table>
 		<table name="flight_table" spec="" >
 			<column name="flight_id" type="integer" jt="4" mandatory="y" />
 			<column name="aircraft_id" type="integer" jt="4" mandatory="y" />
@@ -137,12 +234,12 @@
 				<defo><![CDATA['scheduled']]></defo>
 				<comment><![CDATA['Scheduled, Delayed, In Air, Finished, Cancelled']]></comment>
 			</column>
-			<column name="planned_dep_time" type="date" jt="91" mandatory="y" >
+			<column name="planned_dep_time" type="timestamp" jt="93" mandatory="y" >
 				<comment><![CDATA['Planned depature time']]></comment>
 			</column>
-			<column name="planned_arr_time" type="date" jt="91" mandatory="y" />
-			<column name="actual_dep_time" type="date" jt="91" />
-			<column name="actual_arr_time" type="date" jt="91" />
+			<column name="planned_arr_time" type="timestamp" jt="93" mandatory="y" />
+			<column name="actual_dep_time" type="timestamp" jt="93" />
+			<column name="actual_arr_time" type="timestamp" jt="93" />
 			<column name="origin_id" type="integer" jt="4" mandatory="y" />
 			<column name="destination_id" type="integer" jt="4" mandatory="y" />
 			<index name="pk_flight_table" unique="PRIMARY_KEY" >
@@ -196,17 +293,35 @@
 				<fk_column name="aircraft_id" pk="aircraft_id" />
 			</fk>
 		</table>
+		<table name="passenger_special_assistance" prior="passenger" >
+			<column name="assistance_id" type="integer" jt="4" mandatory="y" />
+			<column name="assistance_name" type="varchar" length="50" jt="12" mandatory="y" />
+			<column name="assistance_description" type="varchar" length="200" jt="12" />
+			<index name="pk_passenger_special_assistance" unique="PRIMARY_KEY" >
+				<column name="assistance_id" />
+			</index>
+		</table>
 		<table name="passengers" spec="" >
 			<comment><![CDATA['Information about our passengers, includes all primary data we have to store to offer our service']]></comment>
 			<column name="passenger_id" type="numeric" length="0" decimal="20" jt="2" mandatory="y" />
 			<column name="name" type="varchar" length="100" jt="12" mandatory="y" />
-			<column name="citizenship" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="surname" type="varchar" length="30" jt="12" mandatory="y" />
+			<column name="citizenship_id" prior="citizenship" type="integer" length="100" jt="4" mandatory="y" />
 			<column name="passport_id" type="varchar" length="30" jt="12" mandatory="y" />
 			<column name="birth_date" type="date" jt="91" mandatory="y" />
 			<column name="email" type="varchar" length="100" jt="12" />
+			<column name="special_assistance_id" type="integer" jt="4" mandatory="y" >
+				<defo><![CDATA[0]]></defo>
+			</column>
 			<index name="pk_passengers" unique="PRIMARY_KEY" >
 				<column name="passenger_id" />
 			</index>
+			<fk name="fk_passengers_citizenship" to_schema="public" to_table="citizenship" >
+				<fk_column name="citizenship_id" pk="citizenship_id" />
+			</fk>
+			<fk name="fk_passengers" to_schema="public" to_table="passenger_special_assistance" >
+				<fk_column name="special_assistance_id" pk="assistance_id" />
+			</fk>
 		</table>
 		<table name="refund_table" spec="" >
 			<column name="ticket_id" type="integer" jt="4" mandatory="y" />
@@ -218,26 +333,59 @@
 				<column name="ticket_id" />
 			</index>
 			<constraint name="price_check" >
-				<string><![CDATA[refund_amount > '0.00']]></string>options="" 
+				<string><![CDATA[refund_amount > '0.00']]></string>
 			</constraint>
 			<fk name="fk_refund_table_booking_table" to_schema="public" to_table="booking_table" options="" >
 				<fk_column name="ticket_id" pk="ticket_id" />
 			</fk>
 		</table>
+		<table name="seats_description" prior="tbl_0" >
+			<column name="aircraft_model_id" type="integer" jt="4" mandatory="y" />
+			<column name="seat_number" type="integer" jt="4" mandatory="y" />
+			<column name="seat_category" type="integer" jt="4" mandatory="y" >
+				<comment><![CDATA[we suppose that it should be enum {"economic", "first class", "business", "with legs"} or a specific table for that]]></comment>
+			</column>
+			<column name="cost_multiplier" type="numeric" length="2" jt="2" mandatory="y" >
+				<comment><![CDATA[we need to think about that..]]></comment>
+			</column>
+			<fk name="fk_seats_description" to_schema="public" to_table="aircraft_model" >
+				<fk_column name="aircraft_model_id" pk="model_id" />
+			</fk>
+		</table>
+		<table name="special_assistance_assignments" prior="tbl" >
+			<column name="employee_id" type="integer" jt="4" mandatory="y" />
+			<column name="ticket_id" type="integer" jt="4" mandatory="y" />
+			<fk name="fk_special_assistance_assignments" to_schema="public" to_table="employee" >
+				<fk_column name="employee_id" pk="employee_id" />
+			</fk>
+			<fk name="fk_special_assistance_assignments_booking_table" to_schema="public" to_table="booking_table" >
+				<fk_column name="ticket_id" pk="ticket_id" />
+			</fk>
+		</table>
+		<table name="tbl" />
 	</schema>
 	<connector name="PostgreSQL" database="PostgreSQL" host="localhost" port="5432" instance="postgres" user="postgres" useSystemProxy="false" />
 	<layout name="Layout" id="Layout-294" show_relation="columns" >
-		<entity schema="public" name="aircraft" color="C7F4BE" x="672" y="384" />
-		<entity schema="public" name="aircraft_model" color="C7F4BE" x="688" y="592" />
-		<entity schema="public" name="airports" color="BED3F4" x="304" y="112" />
-		<entity schema="public" name="booking_table" color="F4DDBE" x="528" y="48" />
-		<entity schema="public" name="crew" color="F4DDBE" x="256" y="320" />
-		<entity schema="public" name="employee" color="BEBEF4" x="256" y="464" />
-		<entity schema="public" name="employee_history" color="BEBEF4" x="48" y="496" />
-		<entity schema="public" name="flight_table" color="F4DDBE" x="448" y="288" />
-		<entity schema="public" name="incident_table" color="F4DDBE" x="96" y="224" />
-		<entity schema="public" name="maitainance" color="BED3F4" x="896" y="384" />
-		<entity schema="public" name="passengers" color="BED3F4" x="720" y="176" />
-		<entity schema="public" name="refund_table" color="F4DDBE" x="736" y="48" />
+		<entity schema="public" name="aircraft" color="C7F4BE" x="736" y="656" />
+		<entity schema="public" name="aircraft_model" color="C7F4BE" x="752" y="832" />
+		<entity schema="public" name="airports" color="BED3F4" x="304" y="304" />
+		<entity schema="public" name="booking_table" color="F4DDBE" x="528" y="240" />
+		<entity schema="public" name="cabin_baggage" color="C1D8EE" x="48" y="240" />
+		<entity schema="public" name="checked_baggage" color="C1D8EE" x="240" y="112" />
+		<entity schema="public" name="citizenship" color="C1D8EE" x="1072" y="432" />
+		<entity schema="public" name="crew" color="F4DDBE" x="256" y="512" />
+		<entity schema="public" name="discount_table" color="C1D8EE" x="832" y="48" />
+		<entity schema="public" name="employee" color="BEBEF4" x="288" y="736" />
+		<entity schema="public" name="employee_history" color="BEBEF4" x="48" y="688" />
+		<entity schema="public" name="employee_position" color="C1D8EE" x="80" y="944" />
+		<entity schema="public" name="employee_salaries" color="C1D8EE" x="512" y="912" />
+		<entity schema="public" name="flight_table" color="F4DDBE" x="464" y="576" />
+		<entity schema="public" name="incident_table" color="F4DDBE" x="96" y="416" />
+		<entity schema="public" name="maitainance" color="BED3F4" x="1056" y="592" />
+		<entity schema="public" name="passenger_special_assistance" color="C1D8EE" x="1056" y="256" />
+		<entity schema="public" name="passengers" color="BED3F4" x="816" y="384" />
+		<entity schema="public" name="refund_table" color="F4DDBE" x="736" y="240" />
+		<entity schema="public" name="seats_description" color="C1D8EE" x="1488" y="544" />
+		<entity schema="public" name="special_assistance_assignments" color="C1D8EE" x="704" y="1008" />
 	</layout>
 </project>
