@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="create.sql" id="Project-e6f" database="PostgreSQL" >
+	<schema name="public" >
+		<udt name="action_type" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} action_type AS ENUM('Hiring',  'Position change',  'Remuneration change',  'Separation',  'Other')]]></udt_script>
+		</udt>
+		<udt name="aircraft_status" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} aircraft_status AS ENUM('Active', 'Inactive')]]></udt_script>
+		</udt>
+		<udt name="employee_status" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} employee_status AS ENUM('Active', 'Former')]]></udt_script>
+		</udt>
+		<udt name="flight_type" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} flight_type AS ENUM('scheduled',  'delayed',  'in air',  'finished',  'cancelled')]]></udt_script>
+		</udt>
+		<udt name="incident_type" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} incident_type AS ENUM('airplane malfunction',  'weather condition',  'airport trouble',  'miscellaneous')]]></udt_script>
+		</udt>
+		<udt name="position_type" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} position_type AS ENUM('Pilot',  'Flight attendant',  'Air traffic controller',  'Aircraft maintenance technician',  'Aviation manager',  'Reservation agent',  'Route planner',  'HR manager')]]></udt_script>
+		</udt>
+		<udt name="ticket_status_type" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} ticket_status_type AS ENUM('available',  'bought',  'refund',  'expired',  'cancelled')]]></udt_script>
+		</udt>
+		<udt name="type_of_maitainance_event" udt_java_type="12" udt_precision="NONE" >
+			<udt_script><![CDATA[CREATE TYPE ${name} type_of_maitainance_event AS ENUM('registration', 'repairing',  'planned check',  'deregistration')]]></udt_script>
+		</udt>
+		<table name="aircraft" spec="" >
+			<comment><![CDATA['Aircrafts table stores data about aircrafts that are being used by the company or were used in the past.']]></comment>
+			<column name="aircraft_id" type="integer" jt="4" mandatory="y" />
+			<column name="model_id" type="integer" jt="4" mandatory="y" />
+			<column name="status" type="aircraft_status" jt="12" mandatory="y" />
+			<column name="number_of_flights" type="integer" jt="4" mandatory="y" />
+			<column name="date_of_manufacture" type="date" jt="91" mandatory="y" />
+			<index name="pk aircrafts" unique="PRIMARY_KEY" >
+				<column name="aircraft_id" />
+			</index>
+			<index name="unq model id" unique="NORMAL" >
+				<column name="model_id" />
+			</index>
+			<fk name="fk_aircraft_aircraft_model" to_schema="public" to_table="aircraft_model" >
+				<fk_column name="model_id" pk="model_id" />
+			</fk>
+		</table>
+		<table name="aircraft_model" spec="" >
+			<comment><![CDATA['aircraft_model stores technical information about active and inactive airline's aircrafts.']]></comment>
+			<column name="model_id" type="integer" jt="4" mandatory="y" />
+			<column name="aircraft_name" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="manufacturer" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="seating_capacity" type="integer" jt="4" mandatory="y" />
+			<column name="max_flight_range" type="integer" jt="4" mandatory="y" >
+				<comment><![CDATA['The maximum flight range for this particular model provided in kilometers.']]></comment>
+			</column>
+			<index name="pk aircraft model" unique="PRIMARY_KEY" >
+				<column name="model_id" />
+			</index>
+		</table>
+		<table name="airports" spec="" >
+			<comment><![CDATA['Information about the aiprorts one billion airlines operates with.']]></comment>
+			<column name="airport_id" type="numeric" length="0" decimal="12" jt="2" mandatory="y" />
+			<column name="name" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="location" type="varchar" jt="12" mandatory="y" />
+			<index name="pk_airports" unique="PRIMARY_KEY" >
+				<column name="airport_id" />
+			</index>
+		</table>
+		<table name="booking_table" spec="" >
+			<column name="ticket_id" type="integer" jt="4" mandatory="y" />
+			<column name="status" type="ticket_status_type" jt="12" mandatory="y" >
+				<defo><![CDATA['available']]></defo>
+				<comment><![CDATA['(0 - available (to buy), 1 - bought, 2 - refund(passenger requested refund, 3 - expired, 4 - cancelled(airport cancelled the flight))']]></comment>
+			</column>
+			<column name="flight_id" type="integer" jt="4" mandatory="y" />
+			<column name="seat_number" type="integer" jt="4" mandatory="y" />
+			<column name="price" type="money" jt="3" mandatory="y" />
+			<column name="passenger_id" type="integer" jt="4" />
+			<column name="rating" type="integer" jt="4" >
+				<comment><![CDATA['from 0 to 10, passenger satisfaction']]></comment>
+			</column>
+			<index name="pk_booking_table" unique="PRIMARY_KEY" >
+				<column name="ticket_id" />
+			</index>
+			<constraint name="rating_check" >
+				<string><![CDATA[rating BETWEEN 0 AND 10]]></string>options="" 
+			</constraint>
+			<fk name="fk_booking_table_flight_table" to_schema="public" to_table="flight_table" options="" >
+				<fk_column name="flight_id" pk="flight_id" />
+			</fk>
+			<fk name="fk_booking_table_passengers" to_schema="public" to_table="passengers" >
+				<fk_column name="passenger_id" pk="passenger_id" />
+			</fk>
+		</table>
+		<table name="crew" spec="" >
+			<column name="flight_id" type="numeric" length="0" decimal="20" jt="2" mandatory="y" />
+			<column name="employee_id" type="numeric" length="0" decimal="20" jt="2" mandatory="y" />
+			<fk name="fk_crew_flight_table" to_schema="public" to_table="flight_table" options="" >
+				<fk_column name="flight_id" pk="flight_id" />
+			</fk>
+			<fk name="fk_crew_employee" to_schema="public" to_table="employee" >
+				<fk_column name="employee_id" pk="employee_id" />
+			</fk>
+		</table>
+		<table name="employee" spec="" >
+			<comment><![CDATA['employee table provides basic information about employees of the company.']]></comment>
+			<column name="employee_id" type="integer" jt="4" mandatory="y" />
+			<column name="name" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="position" type="position_type" jt="12" mandatory="y" />
+			<column name="status" type="employee_status" jt="12" mandatory="y" />
+			<column name="remuneration" type="integer" jt="4" mandatory="y" >
+				<comment><![CDATA['remuneration is given in USD.']]></comment>
+			</column>
+			<column name="email" type="varchar" length="100" jt="12" />
+			<column name="home_address" type="varchar" length="100" jt="12" />
+			<index name="pk employee" unique="PRIMARY_KEY" >
+				<column name="employee_id" />
+			</index>
+		</table>
+		<table name="employee_history" spec="" >
+			<comment><![CDATA['employee_history table stores information about actions connected with employees such as hiring, position change, remuneration change and employee separation. Every such action noted in database has to be accompanied with its description in a comment column.']]></comment>
+			<column name="action_id" type="integer" jt="4" mandatory="y" />
+			<column name="employee_id" type="integer" jt="4" mandatory="y" />
+			<column name="date" type="date" jt="91" mandatory="y" />
+			<column name="action_type" type="action_type" jt="12" mandatory="y" />
+			<column name="comment" type="varchar" length="200" jt="12" mandatory="y" />
+			<index name="pk employee history" unique="PRIMARY_KEY" >
+				<column name="action_id" />
+				<column name="employee_id" />
+			</index>
+			<fk name="fk employee history employee" to_schema="public" to_table="employee" options="" >
+				<fk_column name="employee_id" pk="employee_id" />
+			</fk>
+		</table>
+		<table name="flight_table" spec="" >
+			<column name="flight_id" type="integer" jt="4" mandatory="y" />
+			<column name="aircraft_id" type="integer" jt="4" mandatory="y" />
+			<column name="status" type="flight_type" jt="12" mandatory="y" >
+				<defo><![CDATA['scheduled']]></defo>
+				<comment><![CDATA['Scheduled, Delayed, In Air, Finished, Cancelled']]></comment>
+			</column>
+			<column name="planned_dep_time" type="date" jt="91" mandatory="y" >
+				<comment><![CDATA['Planned depature time']]></comment>
+			</column>
+			<column name="planned_arr_time" type="date" jt="91" mandatory="y" />
+			<column name="actual_dep_time" type="date" jt="91" />
+			<column name="actual_arr_time" type="date" jt="91" />
+			<column name="origin_id" type="integer" jt="4" mandatory="y" />
+			<column name="destination_id" type="integer" jt="4" mandatory="y" />
+			<index name="pk_flight_table" unique="PRIMARY_KEY" >
+				<column name="flight_id" />
+			</index>
+			<fk name="fk_flight_table_airports" to_schema="public" to_table="airports" >
+				<fk_column name="origin_id" pk="airport_id" />
+			</fk>
+			<fk name="fk_flight_table_airports_0" to_schema="public" to_table="airports" >
+				<fk_column name="destination_id" pk="airport_id" />
+			</fk>
+			<fk name="fk_flight_table_aircraft" to_schema="public" to_table="aircraft" >
+				<fk_column name="aircraft_id" pk="aircraft_id" />
+			</fk>
+		</table>
+		<table name="incident_table" spec="" >
+			<column name="incident_id" type="integer" jt="4" mandatory="y" />
+			<column name="flight_id" type="integer" jt="4" mandatory="y" >
+				<comment><![CDATA['Flight id on which the incident happened']]></comment>
+			</column>
+			<column name="type" type="incident_type" jt="12" >
+				<comment><![CDATA['(airplane malfunction, weather condition, airport trouble, miscellaneous)']]></comment>
+			</column>
+			<column name="severity_degree" type="integer" jt="4" mandatory="y" >
+				<defo><![CDATA[0]]></defo>
+				<comment><![CDATA['How harmful was incident']]></comment>
+			</column>
+			<column name="comment" type="varchar" jt="12" >
+				<comment><![CDATA['Comment about the incident happened']]></comment>
+			</column>
+			<index name="pk_incident_table" unique="PRIMARY_KEY" >
+				<column name="incident_id" />
+			</index>
+			<constraint name="cns_incident_table_severity_degree" >
+				<string><![CDATA[severity_degree BETWEEN 0 AND 5]]></string>
+			</constraint>
+			<fk name="fk_incident_table_flight_table" to_schema="public" to_table="flight_table" options="" >
+				<fk_column name="flight_id" pk="flight_id" />
+			</fk>
+		</table>
+		<table name="maitainance" spec="" >
+			<column name="maitainance_id" type="decimal" length="0" decimal="20" jt="3" mandatory="y" />
+			<column name="aircraft_id" type="decimal" length="0" decimal="20" jt="3" mandatory="y" />
+			<column name="type" type="type_of_maitainance_event" jt="12" mandatory="y" />
+			<column name="date" type="date" jt="91" mandatory="y" />
+			<column name="comment" type="varchar" jt="12" />
+			<index name="pk_maitainance" unique="PRIMARY_KEY" >
+				<column name="maitainance_id" />
+			</index>
+			<fk name="fk_maitainance_aircraft" to_schema="public" to_table="aircraft" >
+				<fk_column name="aircraft_id" pk="aircraft_id" />
+			</fk>
+		</table>
+		<table name="passengers" spec="" >
+			<comment><![CDATA['Information about our passengers, includes all primary data we have to store to offer our service']]></comment>
+			<column name="passenger_id" type="numeric" length="0" decimal="20" jt="2" mandatory="y" />
+			<column name="name" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="citizenship" type="varchar" length="100" jt="12" mandatory="y" />
+			<column name="passport_id" type="varchar" length="30" jt="12" mandatory="y" />
+			<column name="birth_date" type="date" jt="91" mandatory="y" />
+			<column name="email" type="varchar" length="100" jt="12" />
+			<index name="pk_passengers" unique="PRIMARY_KEY" >
+				<column name="passenger_id" />
+			</index>
+		</table>
+		<table name="refund_table" spec="" >
+			<column name="ticket_id" type="integer" jt="4" mandatory="y" />
+			<column name="refund_amount" type="money" jt="3" mandatory="y" >
+				<defo><![CDATA[0]]></defo>
+			</column>
+			<column name="reason" type="varchar" jt="12" />
+			<index name="pk_refund_table" unique="PRIMARY_KEY" >
+				<column name="ticket_id" />
+			</index>
+			<constraint name="price_check" >
+				<string><![CDATA[refund_amount > '0.00']]></string>options="" 
+			</constraint>
+			<fk name="fk_refund_table_booking_table" to_schema="public" to_table="booking_table" options="" >
+				<fk_column name="ticket_id" pk="ticket_id" />
+			</fk>
+		</table>
+	</schema>
+	<connector name="PostgreSQL" database="PostgreSQL" host="localhost" port="5432" instance="postgres" user="postgres" useSystemProxy="false" />
+	<layout name="Layout" id="Layout-294" show_relation="columns" >
+		<entity schema="public" name="aircraft" color="C7F4BE" x="672" y="384" />
+		<entity schema="public" name="aircraft_model" color="C7F4BE" x="688" y="592" />
+		<entity schema="public" name="airports" color="BED3F4" x="304" y="112" />
+		<entity schema="public" name="booking_table" color="F4DDBE" x="528" y="48" />
+		<entity schema="public" name="crew" color="F4DDBE" x="256" y="320" />
+		<entity schema="public" name="employee" color="BEBEF4" x="256" y="464" />
+		<entity schema="public" name="employee_history" color="BEBEF4" x="48" y="496" />
+		<entity schema="public" name="flight_table" color="F4DDBE" x="448" y="288" />
+		<entity schema="public" name="incident_table" color="F4DDBE" x="96" y="224" />
+		<entity schema="public" name="maitainance" color="BED3F4" x="896" y="384" />
+		<entity schema="public" name="passengers" color="BED3F4" x="720" y="176" />
+		<entity schema="public" name="refund_table" color="F4DDBE" x="736" y="48" />
+	</layout>
+</project>
