@@ -70,7 +70,12 @@ def handle_client(conn, addr):
     except Exception as e:
         conn.sendall(f"Error: {str(e)}".encode())
     finally:
-        if 'port' in locals():
+        # Cleanup: kill the VNC process and release the port
+        if port is not None:
+            print(f"Cleaning up session on port {port}")
+            # Kill the VNC server process
+            subprocess.run(['pkill', '-f', f'Xvnc.*:{display}'])
+            # Release the port
             port_manager.release_port(port)
         conn.close()
 
