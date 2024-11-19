@@ -4,7 +4,7 @@ import socket
 import threading
 
 class PortManager:
-    def __init__(self, start_port=5901, end_port=5999):
+    def __init__(self, start_port=5901, end_port=5902):
         self.start_port = start_port
         self.end_port = end_port
         self.lock = threading.Lock()
