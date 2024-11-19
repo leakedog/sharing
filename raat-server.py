@@ -16,12 +16,15 @@ class PortManager:
             if not self.available_ports:
                 raise RuntimeError("No available ports")
             port = self.available_ports.pop()
+            print(f"Allocate port {port}")
+
             self.used_ports.add(port)
             return port
     
     def release_port(self, port):
         with self.lock:
             if port in self.used_ports:
+                print(f"Release port {port}")
                 self.used_ports.remove(port)
                 self.available_ports.add(port)
 
