@@ -1,52 +1,67 @@
-import socket
 import os
 import subprocess
+import socket
+import threading
 
-def create_vnc_session(password, port, geometry="1024x768", desktop_env="lxde"):
-    display = port - 5900
-    vnc_passwd_path = f"{os.environ['HOME']}/.vnc/{port}.passwd"
-    
-    # Create necessary directories and set the VNC password
-    os.makedirs(os.path.dirname(vnc_passwd_path), exist_ok=True)
-    with open(vnc_passwd_path, "wb") as f:
-        subprocess.run(["vncpasswd", "-f"], input=password.encode(), stdout=f)
+# Function to handle incoming client request
+def handle_client(conn, addr):
+    try:
+        print(f"Connected by {addr}")
+        data = conn.recv(1024).decode().strip()
+        if not data:
+            return
+        
+        password, port, resolution, desktop_env = data.split()
+        port = int(port)
+        display = port - 5900
+        
+        # Create .vnc directory if not exists
+        vnc_dir = os.path.expanduser('~/.vnc')
+        os.makedirs(vnc_dir, exist_ok=True)
+        
+        passwd_file = os.path.join(vnc_dir, f"{port}.passwd")
+        
+        # Set the VNC password
+        with open(passwd_file, 'wb') as f:
+            subprocess.run(['vncpasswd', '-f'], input=password.encode(), stdout=f)
+        
+        # Start the VNC server
+        subprocess.run(['setsid', 'Xvnc', '-AlwaysShared', f'-geometry={resolution}', 
+                        f'-rfbauth={passwd_file}', f':{display}', '&'], check=True)
+        
+        # Start the desktop environment
+        env_start_command = {
+            "lxde": "startlxde",
+            "xfce": "startxfce4"
+        }
+        env_command = env_start_command.get(desktop_env, "startlxde")
+        
+        subprocess.run(f'DISPLAY=:{display} setsid {env_command} &', shell=True, check=True)
+        
+        # Start VNC viewer
+        subprocess.run(f'vncviewer -passwd {passwd_file} 0.0.0.0:{port}', shell=True, check=True)
+        
+        # Reply to client with assigned port number
+        conn.sendall(str(port).encode())
+        
+    except Exception as e:
+        conn.sendall(f"Error: {str(e)}".encode())
+    finally:
+        conn.close()
 
-    # Start Xvnc and the desktop environment session
-    subprocess.Popen(
-        ["Xvnc", f":{display}", "-AlwaysShared", "-geometry", geometry, "-rfbauth", vnc_passwd_path]
-    )
-    subprocess.Popen(
-        ["start" + desktop_env], env={"DISPLAY": f":{display}"}
-    )
+def main():
+    host = ''  # Listen on all available interfaces
+    port = 5000  # Arbitrary port for client connection
 
-    return port
-
-def start_server(host="0.0.0.0", port=5000):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
-        server.bind((host, port))
-        server.listen()
-        print(f"RAAT Server listening on {host}:{port}")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((host, port))
+        s.listen()
+        print(f"Server listening on port {port}")
 
         while True:
-            client, addr = server.accept()
-            with client:
-                print(f"Connection from {addr}")
-                data = client.recv(1024).decode()
-                if not data:
-                    continue
-                
-                try:
-                    password, vnc_port, geometry, desktop_env = data.split()
-                    vnc_port = int(vnc_port)
-                except ValueError:
-                    client.sendall(b"Invalid request format")
-                    continue
-
-                try:
-                    create_vnc_session(password, vnc_port, geometry, desktop_env)
-                    client.sendall(f"VNC session started on port {vnc_port}".encode())
-                except Exception as e:
-                    client.sendall(f"Error: {str(e)}".encode())
+            conn, addr = s.accept()
+            thread = threading.Thread(target=handle_client, args=(conn, addr))
+            thread.start()
 
 if __name__ == "__main__":
-    start_server()
+    main()
