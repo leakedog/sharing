@@ -50,7 +50,7 @@ def handle_client(conn, addr):
         
         # Start the VNC server
         subprocess.run(['setsid', 'Xvnc', f':{display}', '-geometry', resolution, 
-                        '-AlwaysShared', '-rfbauth', passwd_file, '&'], check=True)
+                        '-AlwaysShared', '-rfbauth', passwd_file], check=True)
         
         # Start the desktop environment
         env_start_command = {
@@ -59,8 +59,11 @@ def handle_client(conn, addr):
         }
         env_command = env_start_command.get(desktop_env, "startlxde")
         
-        subprocess.run(f'DISPLAY=:{display} setsid {env_command} & vncviewer -passwd {passwd_file} 0.0.0.0:{port}', shell=True, check=True)
-                
+        subprocess.run(f'DISPLAY=:{display} setsid {env_command}', shell=True, check=True)
+        
+        # Start VNC viewer
+        subprocess.run(f'vncviewer -passwd {passwd_file} 0.0.0.0:{port}', shell=True, check=True)
+        
         # Reply to client with assigned port number
         conn.sendall(str(port).encode())
         
