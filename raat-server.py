@@ -48,10 +48,6 @@ def handle_client(conn, addr):
         with open(passwd_file, 'wb') as f:
             subprocess.run(['vncpasswd', '-f'], input=password.encode(), stdout=f)
         
-        # Start the VNC server
-        subprocess.run(['setsid', 'Xvnc', f':{display}', '-geometry', resolution, 
-                        '-AlwaysShared', '-rfbauth', passwd_file], check=True)
-        
         # Start the desktop environment
         env_start_command = {
             "lxde": "startlxde",
@@ -59,7 +55,7 @@ def handle_client(conn, addr):
         }
         env_command = env_start_command.get(desktop_env, "startlxde")
         
-        subprocess.run(f'DISPLAY=:{display} setsid {env_command}', shell=True, check=True)
+        subprocess.run(f'setsid Xvnc -AlwaysShared -geometry {resolution} -rfbauth {passwd_file} :{display} & DISPLAY=:{display} setsid {env_command} & vncviewer -passwd {passwd_file} 0.0.0.0:{port}', shell=True, check=True)
         
         # Start VNC viewer
         subprocess.run(f'vncviewer -passwd {passwd_file} 0.0.0.0:{port}', shell=True, check=True)
