@@ -37,6 +37,7 @@ def handle_client(conn, addr):
         password, resolution, desktop_env = data.split()
         port = port_manager.allocate_port()
         display = port - 5900
+        print(f"Found port {port}")
         
         # Create .vnc directory if not exists
         vnc_dir = os.path.expanduser('~/.vnc')
