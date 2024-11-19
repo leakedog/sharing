@@ -3,7 +3,30 @@ import subprocess
 import socket
 import threading
 
-# Function to handle incoming client request
+class PortManager:
+    def __init__(self, start_port=5901, end_port=5999):
+        self.start_port = start_port
+        self.end_port = end_port
+        self.lock = threading.Lock()
+        self.used_ports = set()
+        self.available_ports = set(range(start_port, end_port + 1))
+    
+    def allocate_port(self):
+        with self.lock:
+            if not self.available_ports:
+                raise RuntimeError("No available ports")
+            port = self.available_ports.pop()
+            self.used_ports.add(port)
+            return port
+    
+    def release_port(self, port):
+        with self.lock:
+            if port in self.used_ports:
+                self.used_ports.remove(port)
+                self.available_ports.add(port)
+
+port_manager = PortManager()
+
 def handle_client(conn, addr):
     try:
         print(f"Connected by {addr}")
@@ -11,8 +34,8 @@ def handle_client(conn, addr):
         if not data:
             return
         
-        password, port, resolution, desktop_env = data.split()
-        port = int(port)
+        password, resolution, desktop_env = data.split()
+        port = port_manager.allocate_port()
         display = port - 5900
         
         # Create .vnc directory if not exists
@@ -26,8 +49,8 @@ def handle_client(conn, addr):
             subprocess.run(['vncpasswd', '-f'], input=password.encode(), stdout=f)
         
         # Start the VNC server
-        subprocess.run(['setsid', 'Xvnc', '-AlwaysShared', f'-geometry={resolution}', 
-                        f'-rfbauth={passwd_file}', f':{display}', '&'], check=True)
+        subprocess.run(['setsid', 'Xvnc', f':{display}', '-geometry', resolution, 
+                        '-AlwaysShared', '-rfbauth', passwd_file, '&'], check=True)
         
         # Start the desktop environment
         env_start_command = {
@@ -47,6 +70,8 @@ def handle_client(conn, addr):
     except Exception as e:
         conn.sendall(f"Error: {str(e)}".encode())
     finally:
+        if 'port' in locals():
+            port_manager.release_port(port)
         conn.close()
 
 def main():
