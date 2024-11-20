@@ -24,7 +24,7 @@ echo "$vnc_password" | vncpasswd -f > "$passwd_file"
 # Start the VNC server
 Xvnc -AlwaysShared -geometry "$geometry" -rfbauth "$passwd_file" :$display 
 
-sleep(2) 
+sleep 2
 
 # Set the DISPLAY environment variable and start the LXDE desktop environment
 DISPLAY=:$display startlxde 
