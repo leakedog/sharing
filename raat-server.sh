@@ -27,7 +27,7 @@ setsid Xvnc -AlwaysShared -geometry "$geometry" -rfbauth "$passwd_file" :$displa
 sleep 2
 
 # Set the DISPLAY environment variable and start the LXDE desktop environment
-setsid DISPLAY=:$display startlxde 
+DISPLAY=:$display setsid startlxde 
 
 # Start the VNC viewer
 vncviewer -passwd "$passwd_file" 0.0.0.0:$rfb_port
