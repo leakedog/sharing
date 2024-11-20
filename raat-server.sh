@@ -22,10 +22,12 @@ mkdir -p "$config_dir"
 echo "$vnc_password" | vncpasswd -f > "$passwd_file"
 
 # Start the VNC server
-Xvnc -AlwaysShared -geometry "$geometry" -rfbauth "$passwd_file" :$display &
+Xvnc -AlwaysShared -geometry "$geometry" -rfbauth "$passwd_file" :$display 
+
+sleep(2) 
 
 # Set the DISPLAY environment variable and start the LXDE desktop environment
-DISPLAY=:$display startlxde &
+DISPLAY=:$display startlxde 
 
 # Start the VNC viewer
 vncviewer -passwd "$passwd_file" 0.0.0.0:$rfb_port
