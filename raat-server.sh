@@ -24,11 +24,27 @@ vnc_passwd_file=~/.vnc/$port.passwd
 mkdir -p ~/.vnc
 echo "$password" | vncpasswd -f > "$vnc_passwd_file"
 
+# Check if necessary packages are installed
+if ! command -v Xvnc &>/dev/null || ! command -v startlxde &>/dev/null || ! command -v vncviewer &>/dev/null; then
+    echo "Error: Required tools (Xvnc, startlxde, vncviewer) are not installed."
+    exit 1
+fi
+
 # Start Xvnc server
+echo "Starting Xvnc server on display :$display with geometry $geometry..."
 setsid Xvnc -AlwaysShared -geometry "$geometry" -rfbauth "$vnc_passwd_file" ":$display" &
 
+# Wait for Xvnc to initialize
+sleep 2
+
 # Start LXDE session
-DISPLAY=:$display setsid startlxde &
+echo "Starting LXDE session on display :$display..."
+export DISPLAY=:$display
+setsid startlxde &
+
+# Wait for LXDE to initialize
+sleep 5
 
 # Launch VNC viewer
+echo "Launching VNC viewer to connect to 0.0.0.0:$port..."
 vncviewer -passwd "$vnc_passwd_file" 0.0.0.0:"$port"
