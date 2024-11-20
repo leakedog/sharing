@@ -19,25 +19,26 @@ fi
 # Extract display number from port
 display=$(($port - 5900))
 
-# Ensure VNC password file is created
+# Create VNC password file
 vnc_passwd_file=~/.vnc/$port.passwd
 mkdir -p ~/.vnc
 echo "$password" | vncpasswd -f > "$vnc_passwd_file"
 
-# Check if necessary packages are installed
-if ! command -v Xvnc &>/dev/null || ! command -v startlxde &>/dev/null || ! command -v vncviewer &>/dev/null; then
-    echo "Error: Required tools (Xvnc, startlxde, vncviewer) are not installed."
-    exit 1
+# Kill any existing VNC server on the same display to avoid conflicts
+if pgrep -f "Xvnc :$display" &>/dev/null; then
+    echo "Stopping existing VNC server on display :$display..."
+    pkill -f "Xvnc :$display"
+    sleep 2
 fi
 
-# Start Xvnc server
+# Start the Xvnc server
 echo "Starting Xvnc server on display :$display with geometry $geometry..."
-setsid Xvnc -AlwaysShared -geometry "$geometry" -rfbauth "$vnc_passwd_file" ":$display" &
+setsid Xvnc :$display -geometry "$geometry" -rfbauth "$vnc_passwd_file" -AlwaysShared -SecurityTypes=VeNCrypt,TLSVnc &
 
 # Wait for Xvnc to initialize
-sleep 2
+sleep 5
 
-# Start LXDE session
+# Ensure the desktop environment starts
 echo "Starting LXDE session on display :$display..."
 export DISPLAY=:$display
 setsid startlxde &
@@ -45,6 +46,15 @@ setsid startlxde &
 # Wait for LXDE to initialize
 sleep 5
 
+# Check if the VNC server is running properly
+if ! pgrep -f "Xvnc :$display" &>/dev/null; then
+    echo "Error: Failed to start VNC server on display :$display."
+    exit 1
+fi
+
 # Launch VNC viewer
 echo "Launching VNC viewer to connect to 0.0.0.0:$port..."
 vncviewer -passwd "$vnc_passwd_file" 0.0.0.0:"$port"
+
+# Cleanup on exit
+trap "pkill -f 'Xvnc :$display'; rm -f $vnc_passwd_file" EXIT
