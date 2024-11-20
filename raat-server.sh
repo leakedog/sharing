@@ -38,9 +38,7 @@ lxde_pid=$!
 
 # Wait for the desktop environment to start
 echo "Waiting for LXDE to initialize..."
-while ! pgrep -f startlxde > /dev/null; do
-    sleep 1
-done
+sleep 5
 echo "LXDE started."
 
 # Start the VNC viewer
