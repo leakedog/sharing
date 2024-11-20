@@ -21,7 +21,7 @@ mkdir -p "$config_dir"
 echo "$vnc_password" | vncpasswd -f > "$passwd_file"
 
 # Start the VNC server and wait for it to initialize
-setsid Xvnc -AlwaysShared -geometry "$geometry" -rfbauth "$passwd_file" :$display &
+setsid Xvnc -AlwaysShared -geometry "$geometry" -rfbauth "$passwd_file" +extension DPMS :$display &
 vnc_pid=$!
 
 echo "Waiting for VNC server to initialize..."
