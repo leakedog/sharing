@@ -20,10 +20,10 @@ def save_desktop_env(config_file, desktop_env):
     with open(config_file, 'w') as f:
         json.dump({'desktop_env': desktop_env}, f)
 
-def kill_vnc_process(rfb_port):
+def kill_vnc_process(display):
     """Kill the VNC process running on the specified port."""
-    print(f"Stopping VNC server on port {rfb_port}...")
-    subprocess.run(f"pkill -f 'Xvnc.*:{rfb_port}'", shell=True)
+    print(f"Stopping VNC server on display {display}...")
+    subprocess.run(f"vncserver -kill :{display}", shell=True)
 
 def main():
     # Check for correct number of arguments (3 or 4)
@@ -60,7 +60,7 @@ def main():
         if previous_protocol:
             print(f"Protocol has changed. Stopping previous {previous_protocol} session...")
             # Kill the previous VNC session if the protocol has changed
-            kill_vnc_process(rfb_port)
+            kill_vnc_process(display)
 
         # Start the VNC server
         print("Starting VNC server...")
