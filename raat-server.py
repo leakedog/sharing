@@ -54,6 +54,7 @@ def main():
 
     # Get the previous desktop environment for this port
     previous_protocol = get_previous_desktop_env(config_file)
+    print(previous_protocol)
 
     # If the desktop environment has changed, close the previous session and start a new one
     if previous_protocol != protocol:
