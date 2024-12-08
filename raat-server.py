@@ -20,6 +20,11 @@ def save_desktop_env(config_file, desktop_env):
     with open(config_file, 'w') as f:
         json.dump({'desktop_env': desktop_env}, f)
 
+def kill_vnc_process(rfb_port):
+    """Kill the VNC process running on the specified port."""
+    print(f"Stopping VNC server on port {rfb_port}...")
+    subprocess.run(f"pkill -f 'Xvnc.*:{rfb_port}'", shell=True)
+
 def main():
     # Check for correct number of arguments (3 or 4)
     if len(sys.argv) < 4 or len(sys.argv) > 5:
@@ -53,9 +58,9 @@ def main():
     # If the desktop environment has changed, close the previous session and start a new one
     if previous_protocol != protocol:
         if previous_protocol:
-            print(f"Stopping previous {previous_protocol} session...")
-            # Kill the previous desktop environment session if it's running
-            subprocess.run(f"pkill -f 'start{previous_protocol}'", shell=True)
+            print(f"Protocol has changed. Stopping previous {previous_protocol} session...")
+            # Kill the previous VNC session if the protocol has changed
+            kill_vnc_process(rfb_port)
 
         # Start the VNC server
         print("Starting VNC server...")
@@ -81,7 +86,6 @@ def main():
         else:
             print(f"Unsupported protocol: {protocol}. Use 'lxde' or 'xfce'.")
             sys.exit(1)
-
 
         # Wait for the desktop environment to initialize
         print(f"Waiting for {protocol} to initialize...")
