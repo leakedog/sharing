@@ -72,7 +72,16 @@ def main():
 
         # Start the requested desktop environment
         print(f"Starting {protocol} desktop environment...")
-        subprocess.Popen(f"DISPLAY=:{display} setsid start{protocol}", shell=True)
+        if protocol == 'xfce':
+            print("Starting XFCE desktop environment...")
+            subprocess.Popen(f"DISPLAY=:{display} setsid startxfce4", shell=True)
+        elif protocol == 'lxde':
+            print("Starting LXDE desktop environment...")
+            subprocess.Popen(f"DISPLAY=:{display} setsid startlxde", shell=True)
+        else:
+            print(f"Unsupported protocol: {protocol}. Use 'lxde' or 'xfce'.")
+            sys.exit(1)
+
 
         # Wait for the desktop environment to initialize
         print(f"Waiting for {protocol} to initialize...")
