@@ -1,97 +1,79 @@
+import sys
 import os
 import subprocess
-import socket
-import threading
+import time
 
-class PortManager:
-    def __init__(self, start_port=5901, end_port=5902):
-        self.start_port = start_port
-        self.end_port = end_port
-        self.lock = threading.Lock()
-        self.used_ports = set()
-        self.available_ports = set(range(start_port, end_port + 1))
-    
-    def allocate_port(self):
-        with self.lock:
-            if not self.available_ports:
-                raise RuntimeError("No available ports")
-            port = self.available_ports.pop()
-            print(f"Allocate port {port}")
-
-            self.used_ports.add(port)
-            return port
-    
-    def release_port(self, port):
-        with self.lock:
-            if port in self.used_ports:
-                print(f"Release port {port}")
-                self.used_ports.remove(port)
-                self.available_ports.add(port)
-
-port_manager = PortManager()
-
-def handle_client(conn, addr):
-    try:
-        print(f"Connected by {addr}")
-        data = conn.recv(1024).decode().strip()
-        if not data:
-            return
-        
-        password, resolution, desktop_env = data.split()
-        port = port_manager.allocate_port()
-        display = port - 5900
-        print(f"Found port {port}")
-        
-        # Create .vnc directory if not exists
-        vnc_dir = os.path.expanduser('~/.vnc')
-        os.makedirs(vnc_dir, exist_ok=True)
-        
-        passwd_file = os.path.join(vnc_dir, f"{port}.passwd")
-        
-        # Set the VNC password
-        with open(passwd_file, 'wb') as f:
-            subprocess.run(['vncpasswd', '-f'], input=password.encode(), stdout=f)
-        
-        # Start the desktop environment
-        env_start_command = {
-            "lxde": "startlxde",
-            "xfce": "startxfce4"
-        }
-        env_command = env_start_command.get(desktop_env, "startlxde")
-        
-        subprocess.run(f'setsid Xvnc -AlwaysShared -geometry {resolution} -rfbauth {passwd_file} :{display} & DISPLAY=:{display} setsid {env_command} & vncviewer -passwd {passwd_file} 0.0.0.0:{port}', shell=True, check=True)
-        
-        # Start VNC viewer
-        subprocess.run(f'vncviewer -passwd {passwd_file} 0.0.0.0:{port}', shell=True, check=True)
-        
-        # Reply to client with assigned port number
-        conn.sendall(str(port).encode())
-        
-    except Exception as e:
-        conn.sendall(f"Error: {str(e)}".encode())
-    finally:
-        # Cleanup: kill the VNC process and release the port
-        if port is not None:
-            print(f"Cleaning up session on port {port}")
-            # Kill the VNC server process
-            subprocess.run(['pkill', '-f', f'Xvnc.*:{display}'])
-            # Release the port
-            port_manager.release_port(port)
-        conn.close()
+def run_command(command):
+    """Helper function to run shell commands."""
+    subprocess.run(command, shell=True, check=True)
 
 def main():
-    host = ''  # Listen on all available interfaces
-    port = 5000  # Arbitrary port for client connection
+    # Check for correct number of arguments
+    if len(sys.argv) < 5:
+        print("Usage: raat-server [vnc password] [rfb port] [geometry] [desktop_env]")
+        sys.exit(1)
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((host, port))
-        s.listen()
-        print(f"Server listening on port {port}")
+    # Parse arguments
+    vnc_password = sys.argv[1]
+    rfb_port = int(sys.argv[2])
+    geometry = sys.argv[3]
+    protocol = sys.argv[4]
 
-        while True:
-            conn, addr = s.accept()
-            thread = threading.Thread(target=handle_client, args=(conn, addr))
-            thread.start()
+    # Calculate display number
+    display = rfb_port - 5900
+
+    # Directory and password file setup
+    config_dir = os.path.expanduser("~/.config/raat-server")
+    passwd_file = os.path.join(config_dir, f"{rfb_port}.passwd")
+
+    # Ensure the directory exists
+    os.makedirs(config_dir, exist_ok=True)
+
+    # Generate the password file
+    with open(passwd_file, 'w') as f:
+        subprocess.run(f"echo {vnc_password} | vncpasswd -f", shell=True, stdout=f)
+
+    # Start the VNC server
+    print("Starting VNC server...")
+    subprocess.Popen(f"setsid Xvnc -AlwaysShared -geometry {geometry} -rfbauth {passwd_file} :{display}", shell=True)
+    
+    # Wait for VNC server to initialize
+    print("Waiting for VNC server to initialize...")
+    while True:
+        result = subprocess.run(f"netstat -tln | grep :{rfb_port}", shell=True, stdout=subprocess.PIPE)
+        if result.returncode == 0:
+            break
+        time.sleep(1)
+    print(f"VNC server started on port {rfb_port}.")
+
+    # Start the specified desktop environment
+    if protocol == 'Xfce':
+        print("Starting XFCE desktop environment...")
+        subprocess.Popen(f"DISPLAY=:{display} setsid startxfce4", shell=True)
+    elif protocol == 'Lxde':
+        print("Starting LXDE desktop environment...")
+        subprocess.Popen(f"DISPLAY=:{display} setsid startlxde", shell=True)
+    else:
+        print(f"Unsupported protocol: {protocol}. Use 'Lxde' or 'Xfce'.")
+        sys.exit(1)
+
+    # Wait for the desktop environment to start
+    print(f"Waiting for {protocol} to initialize...")
+    time.sleep(2)
+    print(f"{protocol} started.")
+
+    # Launch the VNC viewer
+    print("Starting VNC viewer...")
+    subprocess.Popen(f"vncviewer -passwd {passwd_file} 0.0.0.0:{rfb_port}", shell=True)
+
+    # Wait for VNC viewer to initialize
+    print("Waiting for VNC viewer to initialize...")
+    while True:
+        result = subprocess.run("pgrep -f vncviewer", shell=True, stdout=subprocess.PIPE)
+        if result.returncode == 0:
+            break
+        time.sleep(1)
+    print("VNC viewer launched.")
 
 if __name__ == "__main__":
     main()
