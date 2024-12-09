@@ -1,3 +1,2 @@
-wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-arm64.tgz
 
-sudo tar -xvzf ~/Downloads/ngrok-v3-stable-linux-arm64.tgz -C /usr/local/bin
+sudo tar -xvzf ./ngrok-v3-stable-linux-arm64.tgz -C /usr/local/bin
