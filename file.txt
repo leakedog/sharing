@@ -1,2 +1,1 @@
-
-sudo tar -xvzf ./ngrok-v3-stable-linux-arm64.tgz -C /usr/local/bin
+ngrok config add-authtoken 2pzX22q1Yir1njbNPrcIOpOuNZJ_3Ka1Fadmo26LMJhjZhzhX
