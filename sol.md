@@ -1,4 +1,4 @@
-Here are the solutions to the two problems formatted in Markdown.
+Below is a simplified Markdown version with LaTeX math embedded that should compile in environments supporting LaTeX rendering (such as GitHub README files or Jupyter notebooks).
 
 ---
 
@@ -7,38 +7,31 @@ Here are the solutions to the two problems formatted in Markdown.
 **Statement:**  
 Throw \( n \) balls independently and uniformly at random into \( n \) urns. Show that for sufficiently large \( n \),  
 \[
-P\Big(\exists\,i:\,X_i \ge \frac{3\ln n}{\ln\ln n}\Big) \le \frac1n.
+P\Big(\exists\,i:\,X_i \ge \frac{3\ln n}{\ln\ln n}\Big) \le \frac1n,
 \]  
 where \( X_i \) is the number of balls in urn \( i \).
 
 **Solution:**
 
-1. **Union Bound:**  
+1. **Union Bound:**
    \[
    P\Big(\exists\,i:\,X_i \ge k\Big) \le \sum_{i=1}^n P\Big(X_i \ge k\Big) = n \,P\Big(X_1 \ge k\Big).
    \]
 
 2. **Tail Bound for \( X_1 \):**  
-   Because \( X_1 \sim \text{Bin}(n,1/n) \) and \( k > e \), we use the bound  
+   Since \( X_1 \sim \text{Bin}(n,1/n) \) and \( k > e \), we use the bound  
    \[
    P\Big(X_1 \ge k\Big) \le \frac{(e/k)^k}{1 - (e/k)}.
-   \]  
-   This is obtained from  
-   \[
-   P(X_1 \ge k) \le \sum_{i=k}^\infty \Big(\frac{e}{i}\Big)^i 
-   \le \sum_{i=k}^\infty \Big(\frac{e}{k}\Big)^i 
-   = \frac{(e/k)^k}{1 - (e/k)}.
    \]
 
-3. **Substitute \( k = \dfrac{3\ln n}{\ln\ln n} \):**  
-   For large \( n \), \( k > e \) so \( e/k < 1 \). Now,  
+3. **Substitute \( k = \frac{3\ln n}{\ln\ln n} \):**  
+   For large \( n \), \( k > e \), so \( e/k < 1 \). Then  
    \[
    \Big(\frac{e}{k}\Big)^k = \exp\Big(k \cdot(1 - \ln k)\Big).
    \]  
-   With \( k = \dfrac{3\ln n}{\ln\ln n} \), we have  
+   With \( k = \frac{3\ln n}{\ln\ln n} \),  
    \[
-   \ln k = \ln\Big(\frac{3\ln n}{\ln\ln n}\Big) 
-          = \ln3 + \ln\ln n - \ln\ln\ln n,
+   \ln k = \ln3 + \ln\ln n - \ln\ln\ln n,
    \]  
    so  
    \[
@@ -47,14 +40,14 @@ where \( X_i \) is the number of balls in urn \( i \).
    Therefore,  
    \[
    k(1-\ln k) 
-   = \frac{3\ln n}{\ln\ln n} \Big(1 - \ln3 - \ln\ln n + \ln\ln\ln n\Big).
+   = \frac{3\ln n}{\ln\ln n} (1 - \ln3 - \ln\ln n + \ln\ln\ln n).
    \]  
-   The dominant term here is \(-3\ln n\), which implies  
+   The dominant term is \(-3\ln n\), which implies  
    \[
    \Big(\frac{e}{k}\Big)^k \approx n^{-3} \times \text{(sub-polynomial factors)}.
    \]
 
-4. **Estimate the probability:**  
+4. **Estimate the probability:**
    \[
    \begin{aligned}
    P\Big(\exists\,i:\,X_i \ge \frac{3\ln n}{\ln\ln n}\Big) 
@@ -63,7 +56,7 @@ where \( X_i \) is the number of balls in urn \( i \).
    &= \frac{1}{n^2}.
    \end{aligned}
    \]  
-   For sufficiently large \( n \), \(\frac{1}{n^2} < \frac{1}{n}\). Thus,  
+   For sufficiently large \( n \), \( \frac{1}{n^2} < \frac{1}{n} \). Thus,  
    \[
    P\Big(\exists\,i:\,X_i \ge \frac{3\ln n}{\ln\ln n}\Big) \le \frac1n.
    \]
@@ -98,12 +91,12 @@ P\Big(\exists\,i:\,X_i \ge \frac{\ln n}{\ln\ln n}\Big) \ge 1 - \frac1n.
    P\Big(\exists\,i:\,X_i \ge k\Big) = P(Y \ge 1).
    \]
 
-2. **Compute the Expectation:**  
+2. **Compute the Expectation:**
    \[
    \mathbb{E}[Y] = \sum_{i=1}^n \mathbb{E}[Y_i] 
                   = n \, P(X_1 \ge k).
    \]  
-   Using the tail bound for \( X_1 \) with \( k = \dfrac{\ln n}{\ln\ln n} \), one can show that  
+   Using the tail bound for \( X_1 \) with \( k = \frac{\ln n}{\ln\ln n} \), one can show that  
    \[
    n\,P\Big(X_1 \ge \frac{\ln n}{\ln\ln n}\Big)
    \]  
@@ -128,7 +121,7 @@ P\Big(\exists\,i:\,X_i \ge \frac{\ln n}{\ln\ln n}\Big) \ge 1 - \frac1n.
    \mathbb{E}[Y^2] = \sum_{i=1}^n \mathbb{E}[Y_i] 
                   + \sum_{i\neq j} \mathbb{E}[Y_i Y_j].
    \]  
-   Because the events \( \{X_i \ge k\} \) and \( \{X_j \ge k\} \) for \( i \neq j \) are negatively correlated,  
+   Since the events \( \{X_i \ge k\} \) and \( \{X_j \ge k\} \) for \( i \neq j \) are negatively correlated,  
    \[
    \mathbb{E}[Y_i Y_j] \le \mathbb{E}[Y_i]\mathbb{E}[Y_j].
    \]  
@@ -143,7 +136,7 @@ P\Big(\exists\,i:\,X_i \ge \frac{\ln n}{\ln\ln n}\Big) \ge 1 - \frac1n.
    \mathbb{E}[Y^2] \le (\mathbb{E}[Y])^2 + n\,P(X_1 \ge k).
    \]
 
-5. **Using the Inequality:**  
+5. **Using the Inequality:**
    \[
    \begin{aligned}
    P(Y \ge 1) 
@@ -151,7 +144,7 @@ P\Big(\exists\,i:\,X_i \ge \frac{\ln n}{\ln\ln n}\Big) \ge 1 - \frac1n.
    &= \frac{n\,P(X_1 \ge k)}{n\,P(X_1 \ge k) + 1}.
    \end{aligned}
    \]  
-   For \( k = \dfrac{\ln n}{\ln\ln n} \), the term  
+   For \( k = \frac{\ln n}{\ln\ln n} \), the term  
    \[
    n\,P\Big(X_1 \ge \frac{\ln n}{\ln\ln n}\Big)
    \]  
@@ -168,6 +161,6 @@ P\Big(\exists\,i:\,X_i \ge \frac{\ln n}{\ln\ln n}\Big) \ge 1 - \frac1n
 \]  
 for large \( n \).
 
---- 
+---
 
 *These solutions use union bounds, tail estimates, and the Paley-Zygmund inequality, leveraging the negative correlation properties of ball allocations to the urns.*
